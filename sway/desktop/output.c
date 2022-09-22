@@ -775,10 +775,16 @@ static void update_output_manager_config(struct sway_server *server) {
 	wlr_output_manager_v1_set_configuration(server->output_manager_v1, config);
 }
 
+static unsigned int last_headless_num = 0;
+
 static void handle_destroy(struct wl_listener *listener, void *data) {
 	struct sway_output *output = wl_container_of(listener, output, destroy);
 	struct sway_server *server = output->server;
 	output_begin_destroy(output);
+
+	if (wlr_output_is_headless(output->wlr_output)) {
+    last_headless_num--;
+	}
 
 	if (output->enabled) {
 		output_disable(output);
@@ -862,7 +868,11 @@ static void handle_present(struct wl_listener *listener, void *data) {
 	output->refresh_nsec = output_event->refresh;
 }
 
-static unsigned int last_headless_num = 0;
+const char* last_headless_name() {
+  char *name = calloc(64, sizeof(char));
+  snprintf(name, 64, "HEADLESS-%u", last_headless_num);
+  return name;
+}
 
 void handle_new_output(struct wl_listener *listener, void *data) {
 	struct sway_server *server = wl_container_of(listener, server, new_output);
